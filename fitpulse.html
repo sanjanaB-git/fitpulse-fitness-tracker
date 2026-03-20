@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitPulse – Fitness Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --card: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #00ff87;
+    --accent2: #00c9ff;
+    --accent3: #ff6b35;
+    --text: #f0f0f8;
+    --muted: #6b6b8a;
+    --danger: #ff4d6d;
+    --yellow: #ffd166;
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── PAGES ─── */
+  .page { display: none; min-height: 100vh; }
+  .page.active { display: flex; flex-direction: column; }
+
+  /* ─── HOMEPAGE ─── */
+  #home-page {
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .home-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(0,255,135,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,201,255,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .home-grid-lines {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(0,255,135,0.04) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,255,135,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  .home-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 28px;
+    position: relative; z-index: 10;
+  }
+
+  .username-badge {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px; color: #000;
+    flex-shrink: 0;
+  }
+
+  .username-text {
+    font-size: 14px; font-weight: 500;
+    color: var(--muted);
+  }
+  .username-text span {
+    display: block; font-size: 15px; font-weight: 600; color: var(--text);
+  }
+
+  .notif-btn {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative;
+    transition: all 0.2s; color: var(--text);
+  }
+  .notif-btn:hover { border-color: var(--accent); background: rgba(0,255,135,0.1); }
+  .notif-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent3); position: absolute;
+    top: 8px; right: 8px;
+    border: 2px solid var(--bg);
+  }
+
+  .home-center {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 28px; position: relative; z-index: 10;
+  }
+
+  .home-tagline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 4px;
+    color: var(--accent); text-transform: uppercase;
+    margin-bottom: 20px; opacity: 0.8;
+  }
+
+  .home-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 20vw, 110px);
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 0.9;
+    animation: logoReveal 1s ease both;
+  }
+
+  @keyframes logoReveal {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .home-sub {
+    font-size: 15px; color: var(--muted); margin-top: 16px;
+    text-align: center; max-width: 280px; line-height: 1.6;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .pulse-ring {
+    position: relative; margin: 48px 0 36px;
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+
+  .pulse-ring svg {
+    width: 140px; height: 140px; transform: rotate(-90deg);
+  }
+
+  .pulse-ring-inner {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transform: rotate(0);
+  }
+
+  .pulse-icon {
+    font-size: 36px;
+    animation: heartbeat 1.4s ease-in-out infinite;
+  }
+
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    14% { transform: scale(1.15); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.1); }
+  }
+
+  .pulse-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--muted); margin-top: 4px;
+    letter-spacing: 2px;
+  }
+
+  .start-btn {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--accent);
+    color: #000; font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 3px;
+    padding: 16px 52px; border-radius: 100px;
+    border: none; cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 0 30px rgba(0,255,135,0.3), 0 0 60px rgba(0,255,135,0.1);
+    animation: fadeUp 0.8s 0.7s ease both;
+  }
+  .start-btn:hover {
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: 0 0 50px rgba(0,255,135,0.5), 0 0 100px rgba(0,255,135,0.15);
+  }
+  .start-btn:active { transform: scale(0.98); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .home-stats-strip {
+    display: flex; gap: 24px; padding: 24px 28px;
+    justify-content: center; position: relative; z-index: 10;
+  }
+
+  .stat-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 100px; padding: 8px 16px;
+    font-size: 13px; color: var(--muted);
+  }
+  .stat-pill strong { color: var(--text); }
+  .stat-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* ─── DASHBOARD ─── */
+  #dashboard-page { background: var(--bg); }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 10px;
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.9); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .back-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--card); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text); font-size: 16px;
+    transition: all 0.2s;
+  }
+  .back-btn:hover { border-color: var(--accent); }
+
+  .topbar h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; letter-spacing: 2px; color: var(--text);
+  }
+
+  .user-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 100px; padding: 5px 12px 5px 6px;
+    font-size: 13px; font-weight: 500;
+  }
+
+  .user-chip .av { width: 26px; height: 26px; border-radius: 50%; font-size: 11px; }
+
+  .content { padding: 20px; flex: 1; overflow-y: auto; }
+
+  /* ─── SUMMARY RING ─── */
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 24px;
+  }
+
+  .ring-wrap { position: relative; flex-shrink: 0; }
+  .ring-wrap svg { width: 100px; height: 100px; transform: rotate(-90deg); }
+  .ring-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .ring-pct {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px; color: var(--text); line-height: 1;
+  }
+  .ring-lbl {
+    font-size: 9px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
+  }
+
+  .summary-info h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 1px; color: var(--text);
+  }
+  .summary-info p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  .mini-stats { display: flex; gap: 12px; margin-top: 12px; }
+  .mini-stat { text-align: center; }
+  .mini-stat .val {
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px;
+    color: var(--accent);
+  }
+  .mini-stat .key { font-size: 10px; color: var(--muted); }
+
+  /* ─── METRIC TILES ─── */
+  .tiles-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-bottom: 20px;
+  }
+
+  .tile {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px;
+    position: relative; overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .tile:hover { border-color: var(--accent); }
+  .tile::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+  }
+  .tile.steps::before { background: var(--accent); }
+  .tile.cals::before { background: var(--accent3); }
+  .tile.workout::before { background: var(--accent2); }
+  .tile.water::before { background: #a78bfa; }
+
+  .tile-icon { font-size: 24px; margin-bottom: 10px; }
+  .tile-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px; color: var(--text); line-height: 1;
+  }
+  .tile-unit { font-size: 12px; color: var(--muted); margin-left: 2px; }
+  .tile-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .tile-bar {
+    height: 3px; background: var(--border);
+    border-radius: 2px; margin-top: 12px; overflow: hidden;
+  }
+  .tile-bar-fill {
+    height: 100%; border-radius: 2px;
+    transition: width 1s ease;
+  }
+  .tile.steps .tile-bar-fill { background: var(--accent); }
+  .tile.cals .tile-bar-fill { background: var(--accent3); }
+  .tile.workout .tile-bar-fill { background: var(--accent2); }
+  .tile.water .tile-bar-fill { background: #a78bfa; }
+
+  /* ─── LOG BUTTON ─── */
+  .log-btn {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    border: none; border-radius: var(--radius);
+    font-family: 'Bebas Neue', sans-serif; font-size: 20px;
+    letter-spacing: 3px; color: #000; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 24px rgba(0,255,135,0.2);
+  }
+  .log-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,255,135,0.3);
+  }
+
+  /* ─── WEEKLY CHART ─── */
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px; letter-spacing: 2px;
+    color: var(--text); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title span { font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--muted); font-weight: 400; letter-spacing: 0; }
+
+  .chart-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .chart-bars {
+    display: flex; align-items: flex-end;
+    gap: 8px; height: 100px;
+  }
+
+  .bar-col {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 6px; height: 100%;
+    justify-content: flex-end;
+  }
+  .bar {
+    width: 100%; border-radius: 6px 6px 0 0;
+    transition: height 0.8s cubic-bezier(0.4,0,0.2,1);
+    position: relative; cursor: pointer;
+    min-height: 4px;
+  }
+  .bar:hover { filter: brightness(1.2); }
+  .bar.today { box-shadow: 0 0 12px rgba(0,255,135,0.5); }
+  .bar-day { font-size: 10px; color: var(--muted); }
+
+  /* ─── LOG HISTORY ─── */
+  .log-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+  .log-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    animation: slideIn 0.3s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-12px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .log-left { display: flex; align-items: center; gap: 12px; }
+  .log-emoji {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--surface); display: flex;
+    align-items: center; justify-content: center; font-size: 18px;
+    border: 1px solid var(--border);
+  }
+  .log-info .log-name { font-weight: 600; font-size: 14px; }
+  .log-info .log-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .log-cal {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--accent3); font-weight: 600;
+  }
+  .del-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 14px; margin-left: 10px;
+    padding: 4px; border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .del-btn:hover { color: var(--danger); background: rgba(255,77,109,0.1); }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+    display: none; align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--card); border-top: 1px solid var(--border);
+    border-radius: 24px 24px 0 0; width: 100%; max-width: 520px;
+    padding: 28px 24px 40px;
+    animation: slideUp 0.35s cubic-bezier(0.4,0,0.2,1) both;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: var(--border); margin: 0 auto 20px;
+  }
+  .modal h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px; letter-spacing: 2px; margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-field { display: flex; flex-direction: column; gap: 6px; }
+  .form-field.full { grid-column: 1 / -1; }
+  .form-field label {
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); font-weight: 500;
+  }
+  .form-field input,
+  .form-field select {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 14px;
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-field input:focus,
+  .form-field select:focus { border-color: var(--accent); }
+  .form-field select option { background: var(--surface); }
+
+  .modal-actions { display: flex; gap: 12px; margin-top: 22px; }
+  .btn-cancel {
+    flex: 1; padding: 13px; border-radius: 12px;
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer; font-size: 15px;
+    transition: all 0.2s;
+  }
+  .btn-cancel:hover { border-color: var(--danger); color: var(--danger); }
+  .btn-save {
+    flex: 2; padding: 13px; border-radius: 12px;
+    background: var(--accent); border: none;
+    color: #000; font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px; letter-spacing: 2px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-save:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+  /* ─── NOTIFICATION DRAWER ─── */
+  .notif-panel {
+    position: fixed; top: 0; right: -320px; width: 300px;
+    height: 100vh; background: var(--card);
+    border-left: 1px solid var(--border);
+    z-index: 998; padding: 28px 20px;
+    transition: right 0.3s ease;
+    overflow-y: auto;
+  }
+  .notif-panel.open { right: 0; }
+
+  .notif-panel h4 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 2px; margin-bottom: 20px;
+  }
+
+  .notif-item {
+    display: flex; gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-dot2 {
+    width: 8px; height: 8px; border-radius: 50%;
+    margin-top: 5px; flex-shrink: 0;
+  }
+  .notif-item p { font-size: 13px; line-height: 1.5; }
+  .notif-item small { font-size: 11px; color: var(--muted); margin-top: 3px; display: block; }
+
+  .overlay-bg {
+    position: fixed; inset: 0; z-index: 997;
+    display: none; background: rgba(0,0,0,0.5);
+  }
+  .overlay-bg.open { display: block; }
+
+  /* ─── TABS ─── */
+  .tabs {
+    display: flex; gap: 0; background: var(--surface);
+    border-radius: 12px; padding: 4px; margin-bottom: 20px;
+  }
+  .tab {
+    flex: 1; padding: 9px; text-align: center;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    border-radius: 8px; color: var(--muted);
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: var(--accent); color: #000; font-weight: 600;
+  }
+
+  /* ─── WEEKLY TABLE ─── */
+  .week-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  .week-table th {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--muted); text-align: left; padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .week-table td {
+    padding: 12px 0; font-size: 13px; border-bottom: 1px solid rgba(42,42,58,0.5);
+    color: var(--text);
+  }
+  .week-table tr:last-child td { border: none; }
+  .badge {
+    font-size: 10px; padding: 3px 8px; border-radius: 100px;
+    background: rgba(0,255,135,0.15); color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ─── TOAST ─── */
+  .toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: var(--accent); color: #000;
+    padding: 12px 24px; border-radius: 100px;
+    font-weight: 600; font-size: 14px; z-index: 9999;
+    transition: transform 0.3s ease;
+    pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ─── PROGRESS CIRCLES (weekly) ─── */
+  .progress-cards { display: flex; gap: 12px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
+  .prog-card {
+    flex-shrink: 0; background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px; text-align: center; width: 90px;
+  }
+  .prog-card .p-val {
+    font-family: 'Bebas Neue', sans-serif; font-size: 20px;
+    color: var(--accent); line-height: 1;
+  }
+  .prog-card .p-lbl { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 400px) {
+    .tiles-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-field.full { grid-column: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─────────── HOME PAGE ─────────── -->
+<div id="home-page" class="page active">
+  <div class="home-bg"></div>
+  <div class="home-grid-lines"></div>
+
+  <div class="home-topbar">
+    <div class="username-badge">
+      <div class="avatar" id="home-avatar">A</div>
+      <div class="username-text">
+        Welcome back,
+        <span id="home-username">Alex Carter</span>
+      </div>
+    </div>
+    <div class="notif-btn" onclick="openNotif()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+      <div class="notif-dot"></div>
+    </div>
+  </div>
+
+  <div class="home-center">
+    <div class="home-tagline">Your personal fitness companion</div>
+    <div class="home-logo">FITPULSE</div>
+    <div class="home-sub">Track workouts, calories, steps & progress — all in one place.</div>
+
+    <div class="pulse-ring">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#1a1a24" stroke-width="8"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="url(#ringGrad)" stroke-width="8"
+                stroke-linecap="round" stroke-dasharray="200 251" class="anim-ring"/>
+        <defs>
+          <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#00ff87"/>
+            <stop offset="100%" stop-color="#00c9ff"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="pulse-ring-inner">
+        <div class="pulse-icon">💪</div>
+        <div class="pulse-label">READY</div>
+      </div>
+    </div>
+
+    <button class="start-btn" onclick="goToDashboard()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <polyline points="13 17 18 12 13 7"/>
+        <polyline points="6 17 11 12 6 7"/>
+      </svg>
+      GET STARTED
+    </button>
+  </div>
+
+  <div class="home-stats-strip">
+    <div class="stat-pill"><div class="dot"></div><strong>10K+</strong>&nbsp;Active Users</div>
+    <div class="stat-pill"><div class="dot"></div><strong>5</strong>&nbsp;Metrics</div>
+    <div class="stat-pill"><div class="dot"></div><strong>Free</strong>&nbsp;Forever</div>
+  </div>
+</div>
+
+<!-- ─────────── DASHBOARD PAGE ─────────── -->
+<div id="dashboard-page" class="page">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="back-btn" onclick="goToHome()">←</div>
+      <h2>FITPULSE</h2>
+    </div>
+    <div class="user-chip">
+      <div class="avatar av" id="dash-avatar">A</div>
+      <span id="dash-username">Alex</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('daily')">Daily</div>
+      <div class="tab" onclick="switchTab('weekly')">Weekly</div>
+    </div>
+
+    <!-- DAILY TAB -->
+    <div id="tab-daily">
+
+      <!-- Summary Ring -->
+      <div class="summary-card">
+        <div class="ring-wrap">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#1a1a24" stroke-width="10"/>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="url(#g2)" stroke-width="10"
+                    stroke-linecap="round" id="goal-ring" style="stroke-dasharray:0 239;transition:stroke-dasharray 1.2s ease"/>
+            <defs>
+              <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#00ff87"/>
+                <stop offset="100%" stop-color="#00c9ff"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-pct" id="goal-pct">0%</div>
+            <div class="ring-lbl">GOAL</div>
+          </div>
+        </div>
+        <div class="summary-info">
+          <h3 id="today-label">Today's Progress</h3>
+          <p id="today-date" style="font-size:12px;color:var(--muted)"></p>
+          <div class="mini-stats">
+            <div class="mini-stat">
+              <div class="val" id="ms-steps">0</div>
+              <div class="key">STEPS</div>
+            </div>
+            <div class="mini-stat">
+              <div class="val" id="ms-cals">0</div>
+              <div class="key">KCAL</div>
+            </div>
+            <div class="mini-stat">
+              <div class="val" id="ms-min">0</div>
+              <div class="key">MINS</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tiles -->
+      <div class="tiles-grid">
+        <div class="tile steps">
+          <div class="tile-icon">👟</div>
+          <div><span class="tile-val" id="t-steps">0</span><span class="tile-unit">steps</span></div>
+          <div class="tile-label">Goal: 10,000</div>
+          <div class="tile-bar"><div class="tile-bar-fill" id="bar-steps" style="width:0%"></div></div>
+        </div>
+        <div class="tile cals">
+          <div class="tile-icon">🔥</div>
+          <div><span class="tile-val" id="t-cals">0</span><span class="tile-unit">kcal</span></div>
+          <div class="tile-label">Goal: 600</div>
+          <div class="tile-bar"><div class="tile-bar-fill" id="bar-cals" style="width:0%"></div></div>
+        </div>
+        <div class="tile workout">
+          <div class="tile-icon">⏱️</div>
+          <div><span class="tile-val" id="t-min">0</span><span class="tile-unit">min</span></div>
+          <div class="tile-label">Active time</div>
+          <div class="tile-bar"><div class="tile-bar-fill" id="bar-min" style="width:0%"></div></div>
+        </div>
+        <div class="tile water">
+          <div class="tile-icon">💧</div>
+          <div><span class="tile-val" id="t-water">0</span><span class="tile-unit">L</span></div>
+          <div class="tile-label">Goal: 2.5L</div>
+          <div class="tile-bar"><div class="tile-bar-fill" id="bar-water" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- Log Button -->
+      <button class="log-btn" onclick="openModal()">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+        LOG ACTIVITY
+      </button>
+
+      <!-- Chart -->
+      <div class="section-title">WEEKLY STEPS <span>Last 7 days</span></div>
+      <div class="chart-card">
+        <div class="chart-bars" id="chart-bars"></div>
+      </div>
+
+      <!-- History -->
+      <div class="section-title">ACTIVITY LOG <span id="log-count">0 entries</span></div>
+      <div class="log-list" id="log-list">
+        <div style="text-align:center;color:var(--muted);font-size:14px;padding:24px 0;">
+          No activities logged yet. Tap LOG ACTIVITY to start! 🚀
+        </div>
+      </div>
+
+    </div><!-- /tab-daily -->
+
+    <!-- WEEKLY TAB -->
+    <div id="tab-weekly" style="display:none">
+      <div class="section-title">WEEKLY OVERVIEW</div>
+      <div class="progress-cards" id="week-prog-cards"></div>
+
+      <div class="section-title">DAILY BREAKDOWN</div>
+      <table class="week-table">
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th>Steps</th>
+            <th>Cals</th>
+            <th>Mins</th>
+          </tr>
+        </thead>
+        <tbody id="week-tbody"></tbody>
+      </table>
+    </div>
+
+  </div><!-- /content -->
+</div>
+
+<!-- ─────────── LOG MODAL ─────────── -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>📋 LOG ACTIVITY</h3>
+    <div class="form-grid">
+      <div class="form-field full">
+        <label>Exercise Type</label>
+        <select id="f-type">
+          <option value="Running 🏃">Running 🏃</option>
+          <option value="Walking 🚶">Walking 🚶</option>
+          <option value="Cycling 🚴">Cycling 🚴</option>
+          <option value="Swimming 🏊">Swimming 🏊</option>
+          <option value="Gym Workout 🏋️">Gym Workout 🏋️</option>
+          <option value="Yoga 🧘">Yoga 🧘</option>
+          <option value="HIIT 💥">HIIT 💥</option>
+          <option value="Football ⚽">Football ⚽</option>
+          <option value="Basketball 🏀">Basketball 🏀</option>
+          <option value="Other 🎯">Other 🎯</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Duration (min)</label>
+        <input type="number" id="f-duration" placeholder="30" min="1" max="300">
+      </div>
+      <div class="form-field">
+        <label>Calories Burned</label>
+        <input type="number" id="f-calories" placeholder="200" min="1">
+      </div>
+      <div class="form-field">
+        <label>Steps (optional)</label>
+        <input type="number" id="f-steps" placeholder="3000" min="0">
+      </div>
+      <div class="form-field">
+        <label>Water (L)</label>
+        <input type="number" id="f-water" placeholder="0.5" min="0" step="0.1">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveActivity()">SAVE ACTIVITY</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── NOTIFICATION PANEL ─────────── -->
+<div class="overlay-bg" id="overlay-bg" onclick="closeNotif()"></div>
+<div class="notif-panel" id="notif-panel">
+  <h4>🔔 NOTIFICATIONS</h4>
+  <div class="notif-item">
+    <div class="notif-dot2" style="background:var(--accent)"></div>
+    <div>
+      <p>You're 2,400 steps away from your daily goal!</p>
+      <small>2 minutes ago</small>
+    </div>
+  </div>
+  <div class="notif-item">
+    <div class="notif-dot2" style="background:var(--accent2)"></div>
+    <div>
+      <p>Great job! You hit your calorie goal yesterday 🎉</p>
+      <small>Yesterday</small>
+    </div>
+  </div>
+  <div class="notif-item">
+    <div class="notif-dot2" style="background:var(--yellow)"></div>
+    <div>
+      <p>Stay hydrated — drink at least 2.5L of water today.</p>
+      <small>8:00 AM</small>
+    </div>
+  </div>
+  <div class="notif-item">
+    <div class="notif-dot2" style="background:var(--accent3)"></div>
+    <div>
+      <p>Weekly streak: 5 days active 🔥 Keep it up!</p>
+      <small>Monday</small>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ───
+const USERNAME = "Alex Carter";
+const SHORT_NAME = "Alex";
+let logs = JSON.parse(localStorage.getItem('fp_logs') || '[]');
+let weekData = JSON.parse(localStorage.getItem('fp_week') || 'null') || generateWeekData();
+
+function generateWeekData() {
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  return days.map((d, i) => ({
+    day: d,
+    steps: i < 6 ? Math.floor(Math.random() * 8000) + 2000 : 0,
+    cals: i < 6 ? Math.floor(Math.random() * 500) + 100 : 0,
+    mins: i < 6 ? Math.floor(Math.random() * 60) + 10 : 0,
+  }));
+}
+
+function saveState() {
+  localStorage.setItem('fp_logs', JSON.stringify(logs));
+  localStorage.setItem('fp_week', JSON.stringify(weekData));
+}
+
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', () => {
+  // Username
+  document.getElementById('home-username').textContent = USERNAME;
+  document.getElementById('home-avatar').textContent = USERNAME[0].toUpperCase();
+  document.getElementById('dash-username').textContent = SHORT_NAME;
+  document.getElementById('dash-avatar').textContent = USERNAME[0].toUpperCase();
+
+  // Date
+  const now = new Date();
+  document.getElementById('today-date').textContent =
+    now.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+
+  renderAll();
+  buildChart();
+  buildWeekly();
+});
+
+// ─── PAGE NAV ───
+function goToDashboard() {
+  document.getElementById('home-page').classList.remove('active');
+  document.getElementById('dashboard-page').classList.add('active');
+  window.scrollTo(0, 0);
+  setTimeout(updateRing, 300);
+}
+function goToHome() {
+  document.getElementById('dashboard-page').classList.remove('active');
+  document.getElementById('home-page').classList.add('active');
+}
+
+// ─── TABS ───
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-daily').style.display = tab === 'daily' ? 'block' : 'none';
+  document.getElementById('tab-weekly').style.display = tab === 'weekly' ? 'block' : 'none';
+  if (tab === 'weekly') buildWeekly();
+}
+
+// ─── METRICS ───
+function getTodayTotals() {
+  const today = new Date().toDateString();
+  const todayLogs = logs.filter(l => new Date(l.ts).toDateString() === today);
+  return {
+    steps: todayLogs.reduce((a, b) => a + (b.steps || 0), 0),
+    cals:  todayLogs.reduce((a, b) => a + (b.cals || 0), 0),
+    mins:  todayLogs.reduce((a, b) => a + (b.mins || 0), 0),
+    water: todayLogs.reduce((a, b) => a + (b.water || 0), 0),
+  };
+}
+
+function renderAll() {
+  const t = getTodayTotals();
+
+  // Tiles
+  document.getElementById('t-steps').textContent = t.steps.toLocaleString();
+  document.getElementById('t-cals').textContent  = t.cals;
+  document.getElementById('t-min').textContent   = t.mins;
+  document.getElementById('t-water').textContent = t.water.toFixed(1);
+
+  // Mini stats
+  document.getElementById('ms-steps').textContent = t.steps >= 1000 ? (t.steps/1000).toFixed(1)+'k' : t.steps;
+  document.getElementById('ms-cals').textContent  = t.cals;
+  document.getElementById('ms-min').textContent   = t.mins;
+
+  // Progress bars
+  document.getElementById('bar-steps').style.width = Math.min(100, t.steps/100)+'%';
+  document.getElementById('bar-cals').style.width  = Math.min(100, t.cals/6)+'%';
+  document.getElementById('bar-min').style.width   = Math.min(100, t.mins/1.2)+'%';
+  document.getElementById('bar-water').style.width = Math.min(100, (t.water/2.5)*100)+'%';
+
+  // Log list
+  renderLogList();
+  updateRing();
+  buildChart();
+}
+
+function updateRing() {
+  const t = getTodayTotals();
+  const pct = Math.min(100, Math.round((t.steps/10000)*0.4*100 + (t.cals/600)*0.4*100 + (t.mins/120)*0.2*100));
+  const circ = 2 * Math.PI * 38;
+  const fill = (pct / 100) * circ;
+  document.getElementById('goal-ring').style.strokeDasharray = `${fill} ${circ}`;
+  document.getElementById('goal-pct').textContent = pct + '%';
+}
+
+function renderLogList() {
+  const list = document.getElementById('log-list');
+  const today = new Date().toDateString();
+  const todayLogs = logs.filter(l => new Date(l.ts).toDateString() === today).slice().reverse();
+  document.getElementById('log-count').textContent = todayLogs.length + ' entr' + (todayLogs.length===1?'y':'ies');
+
+  if (todayLogs.length === 0) {
+    list.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:14px;padding:24px 0;">No activities logged yet. Tap LOG ACTIVITY to start! 🚀</div>`;
+    return;
+  }
+
+  list.innerHTML = todayLogs.map((log, i) => `
+    <div class="log-item" style="animation-delay:${i*0.05}s">
+      <div class="log-left">
+        <div class="log-emoji">${getEmoji(log.type)}</div>
+        <div class="log-info">
+          <div class="log-name">${log.type.replace(/[^\w\s]/g,'').trim()}</div>
+          <div class="log-meta">${log.mins} min · ${log.steps ? log.steps.toLocaleString()+' steps · ' : ''}${log.water ? log.water+'L water · ' : ''}${new Date(log.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <div class="log-cal">-${log.cals} kcal</div>
+        <button class="del-btn" onclick="deleteLog(${log.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function getEmoji(type) {
+  const map = { 'Running': '🏃', 'Walking': '🚶', 'Cycling': '🚴', 'Swimming': '🏊', 'Gym': '🏋️', 'Yoga': '🧘', 'HIIT': '💥', 'Football': '⚽', 'Basketball': '🏀', 'Other': '🎯' };
+  for (const k in map) if (type.includes(k)) return map[k];
+  return '💪';
+}
+
+// ─── CHART ───
+function buildChart() {
+  const container = document.getElementById('chart-bars');
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const maxSteps = Math.max(...weekData.map(d => d.steps), 1);
+
+  container.innerHTML = days.map((d, i) => {
+    const h = Math.max(4, Math.round((weekData[i].steps / maxSteps) * 88));
+    const isToday = i === todayIdx;
+    const color = isToday ? 'var(--accent)' : 'var(--border)';
+    return `
+      <div class="bar-col">
+        <div class="bar ${isToday?'today':''}" style="height:${h}px;background:${color}" title="${weekData[i].steps.toLocaleString()} steps"></div>
+        <div class="bar-day" style="${isToday?'color:var(--accent)':''}">${d}</div>
+      </div>`;
+  }).join('');
+}
+
+// ─── WEEKLY ───
+function buildWeekly() {
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const totals = { steps: 0, cals: 0, mins: 0 };
+  weekData.forEach(d => { totals.steps += d.steps; totals.cals += d.cals; totals.mins += d.mins; });
+
+  document.getElementById('week-prog-cards').innerHTML = [
+    { label:'TOTAL STEPS', val: totals.steps >= 1000 ? (totals.steps/1000).toFixed(1)+'k' : totals.steps },
+    { label:'CALORIES',    val: totals.cals+'kcal' },
+    { label:'ACTIVE MINS', val: totals.mins+'m' },
+    { label:'AVG STEPS',   val: Math.round(totals.steps/7).toLocaleString() },
+    { label:'ACTIVE DAYS', val: weekData.filter(d=>d.steps>0).length+'/7' },
+  ].map(x => `<div class="prog-card"><div class="p-val">${x.val}</div><div class="p-lbl">${x.label}</div></div>`).join('');
+
+  document.getElementById('week-tbody').innerHTML = weekData.map(d => `
+    <tr>
+      <td><strong>${d.day}</strong></td>
+      <td>${d.steps ? d.steps.toLocaleString() : '—'}</td>
+      <td>${d.cals || '—'}</td>
+      <td>${d.mins || '—'}</td>
+    </tr>`).join('');
+}
+
+// ─── MODAL ───
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  clearForm();
+}
+function clearForm() {
+  ['f-type','f-duration','f-calories','f-steps','f-water'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+    else el.value = '';
+  });
+}
+
+function saveActivity() {
+  const type  = document.getElementById('f-type').value;
+  const mins  = parseInt(document.getElementById('f-duration').value) || 0;
+  const cals  = parseInt(document.getElementById('f-calories').value) || 0;
+  const steps = parseInt(document.getElementById('f-steps').value)    || 0;
+  const water = parseFloat(document.getElementById('f-water').value)  || 0;
+
+  if (!mins && !cals) {
+    showToast('⚠️ Please fill in duration or calories!'); return;
+  }
+
+  const log = { id: Date.now(), type, mins, cals, steps, water, ts: new Date().toISOString() };
+  logs.push(log);
+
+  // Update today in weekData
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  weekData[todayIdx].steps += steps;
+  weekData[todayIdx].cals  += cals;
+  weekData[todayIdx].mins  += mins;
+
+  saveState();
+  renderAll();
+  closeModal();
+  showToast('✅ Activity logged!');
+}
+
+function deleteLog(id) {
+  const log = logs.find(l => l.id === id);
+  if (log) {
+    const todayIdx = (new Date().getDay() + 6) % 7;
+    const logDate = new Date(log.ts).toDateString();
+    if (logDate === new Date().toDateString()) {
+      weekData[todayIdx].steps = Math.max(0, weekData[todayIdx].steps - log.steps);
+      weekData[todayIdx].cals  = Math.max(0, weekData[todayIdx].cals  - log.cals);
+      weekData[todayIdx].mins  = Math.max(0, weekData[todayIdx].mins  - log.mins);
+    }
+  }
+  logs = logs.filter(l => l.id !== id);
+  saveState();
+  renderAll();
+  showToast('🗑️ Activity removed');
+}
+
+// ─── NOTIFICATIONS ───
+function openNotif() {
+  document.getElementById('notif-panel').classList.add('open');
+  document.getElementById('overlay-bg').classList.add('open');
+}
+function closeNotif() {
+  document.getElementById('notif-panel').classList.remove('open');
+  document.getElementById('overlay-bg').classList.remove('open');
+}
+
+// ─── TOAST ───
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Close modal on overlay click
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+</script>
+</body>
+</html>
